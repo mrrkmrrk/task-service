@@ -1,0 +1,46 @@
+services:
+  app:
+    build: .
+    env_file: .env
+    ports:
+      - "127.0.0.1:${HTTP_PORT:-8080}:${HTTP_PORT:-8080}"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:$${HTTP_PORT:-8080}/readyz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-taskservice}
+      MYSQL_USER: ${MYSQL_USER:-taskservice}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?set MYSQL_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=$$MYSQL_PASSWORD mysql -h 127.0.0.1 -u $$MYSQL_USER -D $$MYSQL_DATABASE -e 'SELECT 1' >/dev/null"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+  redis:
+    image: redis:7.4-alpine
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}
+    command: ["sh", "-c", "exec redis-server --requirepass \"$$REDIS_PASSWORD\" --save '' --appendonly no"]
+    healthcheck:
+      test: ["CMD-SHELL", "REDISCLI_AUTH=$$REDIS_PASSWORD redis-cli ping | grep -q PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+volumes:
+  mysql_data:

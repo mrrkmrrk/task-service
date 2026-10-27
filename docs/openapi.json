@@ -1,0 +1,2020 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Сервис управления задачами",
+    "version": "1.0.0",
+    "description": "REST API для команд и задач. Зарегистрируйтесь, получите JWT через /login и вставьте access_token в окно «Авторизация». Все даты возвращаются в UTC."
+  },
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Авторизация"
+    },
+    {
+      "name": "Команды"
+    },
+    {
+      "name": "Задачи"
+    }
+  ],
+  "paths": {
+    "/register": {
+      "post": {
+        "operationId": "register",
+        "summary": "Регистрация пользователя",
+        "description": "Создаёт пользователя с уникальной почтой. Пароль хранится в виде хеша bcrypt.",
+        "tags": [
+          "Авторизация"
+        ],
+        "responses": {
+          "400": {
+            "description": "Некорректный запрос",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Отсутствуют или неверны данные авторизации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Доступ запрещён",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ресурс не найден или недоступен пользователю",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ресурс уже существует или версия задачи устарела",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Ресурс создан",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        },
+        "security": [],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Register"
+              }
+            }
+          },
+          "description": "Тело запроса в формате JSON"
+        }
+      }
+    },
+    "/login": {
+      "post": {
+        "operationId": "login",
+        "summary": "Вход и получение JWT",
+        "description": "Проверяет почту и пароль. Возвращает access_token для заголовка Authorization: Bearer <token>.",
+        "tags": [
+          "Авторизация"
+        ],
+        "responses": {
+          "400": {
+            "description": "Некорректный запрос",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Отсутствуют или неверны данные авторизации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Доступ запрещён",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ресурс не найден или недоступен пользователю",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ресурс уже существует или версия задачи устарела",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Успешный запрос",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Token"
+                }
+              }
+            }
+          }
+        },
+        "security": [],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Login"
+              }
+            }
+          },
+          "description": "Тело запроса в формате JSON"
+        }
+      }
+    },
+    "/teams": {
+      "post": {
+        "operationId": "createTeam",
+        "summary": "Создание команды",
+        "description": "Создаёт команду и добавляет текущего пользователя с ролью owner в одной транзакции.",
+        "tags": [
+          "Команды"
+        ],
+        "responses": {
+          "400": {
+            "description": "Некорректный запрос",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Отсутствуют или неверны данные авторизации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Доступ запрещён",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ресурс не найден или недоступен пользователю",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ресурс уже существует или версия задачи устарела",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Ресурс создан",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Team"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TeamInput"
+              }
+            }
+          },
+          "description": "Тело запроса в формате JSON"
+        }
+      },
+      "get": {
+        "operationId": "listTeams",
+        "summary": "Список своих команд",
+        "description": "Возвращает только команды, в которых состоит текущий пользователь.",
+        "tags": [
+          "Команды"
+        ],
+        "responses": {
+          "400": {
+            "description": "Некорректный запрос",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Отсутствуют или неверны данные авторизации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Доступ запрещён",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ресурс не найден или недоступен пользователю",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ресурс уже существует или версия задачи устарела",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Успешный запрос",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Team"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": []
+      }
+    },
+    "/teams/{id}/invite": {
+      "post": {
+        "operationId": "invite",
+        "summary": "Добавление участника",
+        "description": "Доступно owner/admin. Принимает user_id существующего пользователя и роль admin или member. Повторное добавление возвращает 409 и не меняет роль участника.",
+        "tags": [
+          "Команды"
+        ],
+        "responses": {
+          "400": {
+            "description": "Некорректный запрос",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Отсутствуют или неверны данные авторизации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Доступ запрещён",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ресурс не найден или недоступен пользователю",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ресурс уже существует или версия задачи устарела",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Ресурс создан",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Member"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            },
+            "description": "Идентификатор команды"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Invite"
+              }
+            }
+          },
+          "description": "Тело запроса в формате JSON"
+        }
+      }
+    },
+    "/teams/{id}/members/{userID}": {
+      "patch": {
+        "operationId": "changeRole",
+        "summary": "Изменение роли участника",
+        "description": "Доступно только owner. Можно назначить admin или member. Изменить роль owner или передать её через этот запрос нельзя.",
+        "tags": [
+          "Команды"
+        ],
+        "responses": {
+          "400": {
+            "description": "Некорректный запрос",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Отсутствуют или неверны данные авторизации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Доступ запрещён",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ресурс не найден или недоступен пользователю",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ресурс уже существует или версия задачи устарела",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Успешный запрос",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Member"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            },
+            "description": "Идентификатор команды"
+          },
+          {
+            "name": "userID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            },
+            "description": "Идентификатор участника"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoleInput"
+              }
+            }
+          },
+          "description": "Тело запроса в формате JSON"
+        }
+      }
+    },
+    "/tasks": {
+      "post": {
+        "operationId": "createTask",
+        "summary": "Создание задачи",
+        "description": "Доступно любому участнику команды. Автор определяется из JWT. Исполнитель должен состоять в той же команде. Начальная версия равна 1. Для статуса done заполняется closed_at. Задача и история создания сохраняются атомарно.",
+        "tags": [
+          "Задачи"
+        ],
+        "responses": {
+          "400": {
+            "description": "Некорректный запрос",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Отсутствуют или неверны данные авторизации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Доступ запрещён",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ресурс не найден или недоступен пользователю",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ресурс уже существует или версия задачи устарела",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Ресурс создан",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTask"
+              }
+            }
+          },
+          "description": "Тело запроса в формате JSON"
+        }
+      },
+      "get": {
+        "operationId": "listTasks",
+        "summary": "Список задач с фильтрами",
+        "description": "Требуется участие в команде, в том числе при чтении из кеша. Сортировка: created_at DESC, id DESC. Кеш хранится 5 минут; его версия меняется атомарно при создании или изменении задачи. Повторяющиеся и неизвестные параметры запрещены.",
+        "tags": [
+          "Задачи"
+        ],
+        "responses": {
+          "400": {
+            "description": "Некорректный запрос",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Отсутствуют или неверны данные авторизации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Доступ запрещён",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ресурс не найден или недоступен пользователю",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ресурс уже существует или версия задачи устарела",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Успешный запрос",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Task"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            },
+            "description": "Идентификатор команды"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "todo",
+                "in_progress",
+                "done"
+              ]
+            },
+            "description": "Фильтр по статусу задачи"
+          },
+          {
+            "name": "assignee_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            },
+            "description": "Фильтр по идентификатору исполнителя"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "description": "Количество задач на странице: от 1 до 100, по умолчанию 20"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "description": "Количество пропускаемых задач, по умолчанию 0"
+          }
+        ]
+      }
+    },
+    "/tasks/{id}": {
+      "put": {
+        "operationId": "updateTask",
+        "summary": "Обновление задачи с проверкой версии",
+        "description": "Owner/admin и создатель задачи могут менять все редактируемые поля. Участник, который является только исполнителем, может передать лишь status и version. Остальные участники получают 403, задачи чужой команды возвращают 404. Устаревшая версия даёт 409 с кодом version_conflict. Если значения не изменились, версия и история сохраняются. Повторное открытие очищает closed_at, закрытие устанавливает новое время. Задача, история и версия кеша сохраняются в одной транзакции.",
+        "tags": [
+          "Задачи"
+        ],
+        "responses": {
+          "400": {
+            "description": "Некорректный запрос",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Отсутствуют или неверны данные авторизации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Доступ запрещён",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ресурс не найден или недоступен пользователю",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ресурс уже существует или версия задачи устарела",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Успешный запрос",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            },
+            "description": "Идентификатор задачи"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTask"
+              }
+            }
+          },
+          "description": "Тело запроса в формате JSON"
+        }
+      }
+    },
+    "/tasks/{id}/history": {
+      "get": {
+        "operationId": "history",
+        "summary": "История изменений задачи",
+        "description": "Доступно участникам команды. Сортировка: created_at ASC, id ASC. Содержит создание задачи и старые/новые значения действительно изменившихся полей. Для чужой задачи возвращается 404.",
+        "tags": [
+          "Задачи"
+        ],
+        "responses": {
+          "400": {
+            "description": "Некорректный запрос",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Отсутствуют или неверны данные авторизации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Доступ запрещён",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ресурс не найден или недоступен пользователю",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ресурс уже существует или версия задачи устарела",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Успешный запрос",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/History"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            },
+            "description": "Идентификатор задачи"
+          }
+        ]
+      }
+    },
+    "/tasks/{id}/comments": {
+      "post": {
+        "operationId": "addComment",
+        "summary": "Добавление комментария",
+        "description": "Доступно любому участнику команды. Пустой текст и текст только из пробелов запрещены. Автор определяется из JWT. Для чужой задачи возвращается 404.",
+        "tags": [
+          "Задачи"
+        ],
+        "responses": {
+          "400": {
+            "description": "Некорректный запрос",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Отсутствуют или неверны данные авторизации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Доступ запрещён",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ресурс не найден или недоступен пользователю",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ресурс уже существует или версия задачи устарела",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Ресурс создан",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Comment"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            },
+            "description": "Идентификатор задачи"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentInput"
+              }
+            }
+          },
+          "description": "Тело запроса в формате JSON"
+        }
+      },
+      "get": {
+        "operationId": "comments",
+        "summary": "Список комментариев",
+        "description": "Доступно участникам команды. Сортировка: created_at ASC, id ASC. Для чужой задачи возвращается 404.",
+        "tags": [
+          "Задачи"
+        ],
+        "responses": {
+          "400": {
+            "description": "Некорректный запрос",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Отсутствуют или неверны данные авторизации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Доступ запрещён",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ресурс не найден или недоступен пользователю",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ресурс уже существует или версия задачи устарела",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Успешный запрос",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Comment"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            },
+            "description": "Идентификатор задачи"
+          }
+        ]
+      }
+    },
+    "/teams/{team_id}/stats": {
+      "get": {
+        "operationId": "stats",
+        "summary": "Статистика команды",
+        "description": "Доступно owner/admin. Отчёт строится одним SQL-запросом с CTE. Количество задач по статусам считается по всей команде. Топ-3 исполнителя определяется по closed_at за последние 30 дней UTC: число закрытых задач по убыванию, при равенстве user_id по возрастанию. Среднее время от created_at до closed_at считается по всем закрытым задачам, включая старые и неназначенные; если таких задач нет, возвращается 0. Комментарии учитываются по задачам этой команды без повторного подсчёта.",
+        "tags": [
+          "Команды"
+        ],
+        "responses": {
+          "400": {
+            "description": "Некорректный запрос",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Отсутствуют или неверны данные авторизации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Доступ запрещён",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ресурс не найден или недоступен пользователю",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ресурс уже существует или версия задачи устарела",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Успешный запрос",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Stats"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "team_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            },
+            "description": "Идентификатор команды"
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Вставьте access_token из ответа /login. Префикс Bearer Swagger добавит автоматически."
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ],
+            "description": "Описание ошибки"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "title": "Ошибка API"
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "description": "Идентификатор записи"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Электронная почта",
+            "example": "ivan@example.com"
+          },
+          "name": {
+            "type": "string",
+            "description": "Имя",
+            "example": "Иван"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Время создания в UTC"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "name",
+          "created_at"
+        ],
+        "title": "Пользователь"
+      },
+      "Register": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 254,
+            "description": "Электронная почта",
+            "example": "ivan@example.com"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 72,
+            "description": "От 8 до 72 байт UTF-8; ограничение bcrypt"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "Имя",
+            "example": "Иван"
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "name"
+        ],
+        "additionalProperties": false,
+        "title": "Данные регистрации"
+      },
+      "Login": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Электронная почта",
+            "example": "ivan@example.com"
+          },
+          "password": {
+            "type": "string",
+            "description": "Пароль пользователя"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "additionalProperties": false,
+        "title": "Данные входа"
+      },
+      "Token": {
+        "type": "object",
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "description": "JWT для защищённых запросов"
+          },
+          "token_type": {
+            "type": "string",
+            "enum": [
+              "Bearer"
+            ],
+            "description": "Тип авторизации"
+          }
+        },
+        "required": [
+          "access_token",
+          "token_type"
+        ],
+        "title": "Токен доступа"
+      },
+      "Team": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "description": "Идентификатор записи"
+          },
+          "name": {
+            "type": "string",
+            "description": "Название команды",
+            "example": "Разработка"
+          },
+          "created_by": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "description": "Идентификатор создателя"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Время создания в UTC"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "owner",
+              "admin",
+              "member"
+            ],
+            "description": "Роль: owner - владелец, admin - администратор, member - участник"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "created_by",
+          "created_at",
+          "role"
+        ],
+        "title": "Команда"
+      },
+      "TeamInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "Название команды",
+            "example": "Разработка"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false,
+        "title": "Создание команды"
+      },
+      "Member": {
+        "type": "object",
+        "properties": {
+          "team_id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "description": "Идентификатор команды"
+          },
+          "user_id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "description": "Идентификатор пользователя"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "owner",
+              "admin",
+              "member"
+            ],
+            "description": "Роль: owner - владелец, admin - администратор, member - участник"
+          }
+        },
+        "required": [
+          "team_id",
+          "user_id",
+          "role"
+        ],
+        "title": "Участник команды"
+      },
+      "Invite": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "description": "Идентификатор пользователя"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "member"
+            ],
+            "description": "Роль: owner - владелец, admin - администратор, member - участник"
+          }
+        },
+        "required": [
+          "user_id",
+          "role"
+        ],
+        "additionalProperties": false,
+        "title": "Добавление участника"
+      },
+      "RoleInput": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "member"
+            ],
+            "description": "Роль: owner - владелец, admin - администратор, member - участник"
+          }
+        },
+        "required": [
+          "role"
+        ],
+        "additionalProperties": false,
+        "title": "Новая роль"
+      },
+      "Task": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "description": "Идентификатор записи"
+          },
+          "team_id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "description": "Идентификатор команды"
+          },
+          "title": {
+            "type": "string",
+            "description": "Название задачи",
+            "example": "Добавить тесты отчёта"
+          },
+          "description": {
+            "type": "string",
+            "description": "Описание задачи"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "todo",
+              "in_progress",
+              "done"
+            ],
+            "description": "Статус: todo - к выполнению, in_progress - в работе, done - завершена"
+          },
+          "created_by": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "description": "Идентификатор создателя"
+          },
+          "assignee_id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "nullable": true,
+            "description": "Идентификатор исполнителя; null, если не назначен"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Время создания в UTC"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Время последнего изменения в UTC"
+          },
+          "closed_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Время закрытия в UTC; null для открытой задачи"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "description": "Версия задачи для защиты от конкурентных обновлений"
+          }
+        },
+        "required": [
+          "id",
+          "team_id",
+          "title",
+          "description",
+          "status",
+          "created_by",
+          "assignee_id",
+          "created_at",
+          "updated_at",
+          "closed_at",
+          "version"
+        ],
+        "title": "Задача"
+      },
+      "CreateTask": {
+        "type": "object",
+        "properties": {
+          "team_id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "description": "Идентификатор команды"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Название задачи",
+            "example": "Добавить тесты отчёта"
+          },
+          "description": {
+            "type": "string",
+            "description": "Не более 16000 байт UTF-8",
+            "default": ""
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "todo",
+              "in_progress",
+              "done"
+            ],
+            "default": "todo",
+            "description": "Статус: todo - к выполнению, in_progress - в работе, done - завершена"
+          },
+          "assignee_id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "nullable": true,
+            "description": "Участник той же команды; отсутствие поля или null означает, что исполнитель не назначен"
+          }
+        },
+        "required": [
+          "team_id",
+          "title"
+        ],
+        "additionalProperties": false,
+        "title": "Создание задачи"
+      },
+      "UpdateTask": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "description": "Версия задачи для защиты от конкурентных обновлений"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Название задачи",
+            "example": "Добавить тесты отчёта"
+          },
+          "description": {
+            "type": "string",
+            "description": "Не более 16000 байт UTF-8"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "todo",
+              "in_progress",
+              "done"
+            ],
+            "description": "Статус: todo - к выполнению, in_progress - в работе, done - завершена"
+          },
+          "assignee_id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "nullable": true,
+            "description": "null снимает назначение; отсутствие поля сохраняет текущего исполнителя"
+          }
+        },
+        "required": [
+          "version"
+        ],
+        "additionalProperties": false,
+        "description": "Частичное изменение полей через PUT. Обязательно хотя бы одно редактируемое поле. Значение null допускается только для assignee_id.",
+        "title": "Изменение задачи"
+      },
+      "Change": {
+        "type": "object",
+        "properties": {
+          "old": {
+            "nullable": true,
+            "description": "Предыдущее значение"
+          },
+          "new": {
+            "nullable": true,
+            "description": "Новое значение"
+          }
+        },
+        "required": [
+          "old",
+          "new"
+        ],
+        "title": "Изменение поля"
+      },
+      "History": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "description": "Идентификатор записи"
+          },
+          "task_id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "description": "Идентификатор задачи"
+          },
+          "changed_by": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "description": "Идентификатор автора изменения"
+          },
+          "changes": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Change"
+            },
+            "description": "Изменившиеся поля со старыми и новыми значениями"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Время создания в UTC"
+          }
+        },
+        "required": [
+          "id",
+          "task_id",
+          "changed_by",
+          "changes",
+          "created_at"
+        ],
+        "title": "Запись истории"
+      },
+      "Comment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "description": "Идентификатор записи"
+          },
+          "task_id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "description": "Идентификатор задачи"
+          },
+          "user_id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "description": "Идентификатор пользователя"
+          },
+          "content": {
+            "type": "string",
+            "description": "Текст комментария",
+            "example": "Проверено, можно закрывать задачу"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Время создания в UTC"
+          }
+        },
+        "required": [
+          "id",
+          "task_id",
+          "user_id",
+          "content",
+          "created_at"
+        ],
+        "title": "Комментарий"
+      },
+      "CommentInput": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000,
+            "description": "Текст комментария",
+            "example": "Проверено, можно закрывать задачу"
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "additionalProperties": false,
+        "title": "Новый комментарий"
+      },
+      "TopAssignee": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "description": "Идентификатор пользователя"
+          },
+          "name": {
+            "type": "string",
+            "description": "Имя"
+          },
+          "closed_tasks": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "description": "Количество закрытых задач за 30 дней"
+          }
+        },
+        "required": [
+          "user_id",
+          "name",
+          "closed_tasks"
+        ],
+        "title": "Исполнитель в рейтинге"
+      },
+      "Stats": {
+        "type": "object",
+        "properties": {
+          "tasks_by_status": {
+            "type": "object",
+            "properties": {
+              "todo": {
+                "type": "integer",
+                "format": "int64",
+                "minimum": 0
+              },
+              "in_progress": {
+                "type": "integer",
+                "format": "int64",
+                "minimum": 0
+              },
+              "done": {
+                "type": "integer",
+                "format": "int64",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "todo",
+              "in_progress",
+              "done"
+            ],
+            "description": "Количество задач в каждом статусе"
+          },
+          "top_assignees": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TopAssignee"
+            },
+            "maxItems": 3,
+            "description": "Три исполнителя с наибольшим числом закрытых задач за 30 дней"
+          },
+          "avg_close_seconds": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0,
+            "description": "Среднее время закрытия в секундах; 0, если нет закрытых задач"
+          },
+          "comments_count": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0,
+            "description": "Количество комментариев к задачам команды"
+          }
+        },
+        "required": [
+          "tasks_by_status",
+          "top_assignees",
+          "avg_close_seconds",
+          "comments_count"
+        ],
+        "title": "Статистика команды"
+      }
+    }
+  }
+}
